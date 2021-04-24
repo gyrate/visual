@@ -11,7 +11,10 @@ var routes = [{
     component:()=>import('@/views/ColorHint')
 },{
     path:'/webgl-gm',
-    component:()=>import('@/views/WebglGM')
+    component:()=>import('@/views/WebglGM.vue')
+},{
+    path:'/webgl-round',
+    component:()=>import('@/views/WebglRound.vue')
 }]
 
 const router = createRouter({
