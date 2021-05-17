@@ -1,6 +1,6 @@
 <template>
   <div>
-    <canvas width="300" height="300"></canvas>
+    <canvas width="300" height="300" ref="canvas"></canvas>
   </div>
 </template>
 
@@ -10,12 +10,19 @@ export default {
   name: "WebglRound",
   components: {},
   mounted() {
-    this.init()
+    this.init();
+
+    const canvas = this.$refs['canvas']
+    const {offsetLeft, offsetTop, clientWidth, clientHeight} = canvas
+    canvas.addEventListener('mousemove', function(event){
+      const {x, y} = event
+      // vec2 (x -offsetLeft, y- offsetTop)
+      // vec2 (clientWidth/2 ,clientHeight/2)
+    },false)
+
   },
   methods: {
-
-    init(){
-      
+    init() {
       const vertex = `
         //特定的变量
         attribute vec2 a_vertexPosition;
@@ -34,6 +41,8 @@ export default {
         precision highp float;
         #endif
         varying vec2 vUv;
+
+        uniform float u_time;
 
         vec3 hsv2rgb(vec3 c){ 
           vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0), 6.0)-3.0)-1.0, 0.0, 1.0); 
@@ -67,42 +76,65 @@ export default {
             //角度
             vec2 r = vUv  - vec2(0.5);   
             float a = atan(r.y, r.x);
-            gl_FragColor.rgb = hsv2rgb(vec3(a/6.28, d/0.3 + 0.3,  1.8-d/0.3));     
+            //h色相 s饱和度 v明度
+            gl_FragColor.rgb = hsv2rgb(vec3(a/6.28, d/0.3 + 0.3,  1.8-d/0.3 + u_time));     
 
           }        
           gl_FragColor.a = 1.0;
         }   
       `;
 
-      const canvas = document.querySelector('canvas');
+      const canvas = document.querySelector("canvas");
       const renderer = new GlRenderer(canvas);
       const program = renderer.compileSync(fragment, vertex);
       renderer.useProgram(program);
 
-      renderer.setMeshData([{
-        positions: [
-          [-1, -1],
-          [-1, 1],
-          [1, 1],
-          [1, -1],
-        ],
-        attributes: {
-          uv: [
-            [0, 0],
-            [0, 1],
+      renderer.setMeshData([
+        {
+          positions: [
+            [-1, -1],
+            [-1, 1],
             [1, 1],
-            [1, 0],
+            [1, -1],
+          ],
+          attributes: {
+            uv: [
+              [0, 0],
+              [0, 1],
+              [1, 1],
+              [1, 0],
+            ],
+          },    
+          //画布由两个三角形cell组成，以下为对cell三个点坐标的声明
+          //[[-1,-1],[-1,1],[1,1]]
+          //[[1,1],[-1,-1],[1,-1]]
+          cells: [
+            [0, 1, 2],
+            [2, 0, 3],
           ],
         },
-        cells: [[0, 1, 2], [2, 0, 3]],
-      }]);
+      ]);
 
+      renderer.uniforms.u_time = 0 ;
       renderer.render();
 
-      
+      this.update(renderer)
     },
+    update(renderer){
+      var diff = 0.02;
+      requestAnimationFrame(function update() {
+        //明度跟随时间变化
+        const u_time = renderer.uniforms.u_time;
+        if (u_time > 1 || u_time < 0) {
+          diff = -diff;
+        }
+        renderer.uniforms.u_time += diff;
 
+        //饱和度跟随鼠标变化
 
+        requestAnimationFrame(update);
+      })
+    }
   },
 };
 </script>
