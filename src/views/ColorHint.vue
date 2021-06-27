@@ -1,21 +1,23 @@
 <template>
-  <div>
-    <h3>HSV</h3>
-    <canvas width="512" height="512" ref="canvas1"></canvas>
-  </div>
-  <div>
-    <h3>RGB</h3>
-    <canvas width="512" height="512" ref="canvas2"></canvas>
-  </div>
-  <div>
-    <h3>CIE Lab</h3>
-    <canvas width="512" height="512" ref="canvas3"></canvas>
-  </div>
+ <div>
+   <div>
+     <h3>HSV</h3>
+     <canvas width="512" height="512" ref="canvas1"></canvas>
+   </div>
+   <div>
+     <h3>RGB</h3>
+     <canvas width="512" height="512" ref="canvas2"></canvas>
+   </div>
+   <div>
+     <h3>CIE Lab</h3>
+     <canvas width="512" height="512" ref="canvas3"></canvas>
+   </div>
 
-  <div>
-    <h3>HSV Color Wheel</h3>
-    <canvas width="512" height="512" ref="canvas4"></canvas>
-  </div>
+   <div>
+     <h3>HSV Color Wheel</h3>
+     <canvas width="512" height="512" ref="canvas4"></canvas>
+   </div>
+ </div>
 
 </template>
 

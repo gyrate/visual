@@ -1,24 +1,43 @@
 <template>
-    <div class="">
+    <div class="wrap">
 
-      Hello world
+      <div ref="container" class="container"></div>
 
     </div>
 </template>
 
 <script>
+  import * as THREE from 'three'
+  import DAT from 'three/examples/jsm/libs/dat.gui.module.js'
+  import Stats from 'three/examples/jsm/libs/stats.module.js'
+
   export default {
     name: 'Earth',
     components: {},
     data() {
       return {}
     },
-    mounted() {
+    async mounted() {
+      await this.init()
     },
-    methods: {}
+    methods: {
+      init(){
+
+      }
+    }
   }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss" type="text/scss" scoped>
+.wrap{
+  position: relative;
 
+  .container{
+    position:absolute;
+    overflow: hidden;
+    width:100%;
+    height:100vh;
+    background-color: #2c3e50;
+  }
+}
 </style>

@@ -1,4 +1,6 @@
-import { createRouter, createWebHashHistory} from "vue-router"
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+Vue.use(VueRouter)
 
 var routes = [{
     path:'/',
@@ -20,11 +22,18 @@ var routes = [{
   component: () => import('@/views/threejs/Earth.vue')
 }]
 
-const router = createRouter({
-    history: createWebHashHistory(),
-    routes: routes,
-    // mode:'hash'
-// base: process.env.BASE_URL
+const router = new VueRouter({
+  routes: routes.concat([
+    {
+      path: '/404',
+      component: () => import('@/views/error-page/404')
+    },
+    {
+      path: '*',
+      redirect: '/404',
+      hidden: true
+    }
+  ])
 })
 
 export default router
