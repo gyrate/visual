@@ -45,7 +45,8 @@
       this.initBg()
       this.initEarth()
       this.initHalo()
-      this.initMap()
+      // this.initMap()
+      this.outLineMap()
       this.initMarkers()
 
     },
@@ -343,6 +344,50 @@
           map.add(province)
         })
         group.add(map)
+      },
+
+      async outLineMap(){
+
+        const chinaJson = await this.fetchData(`/mock/chinaEdge.json`)
+        const map = new THREE.Group()
+        const lglt2xyz = this.lglt2xyz
+
+        // 遍历省份构建模型
+        chinaJson.features.forEach((elem,index) => {
+
+          // 新建一个省份容器：用来存放省份对应的模型和轮廓线
+          const province = new THREE.Object3D();
+          const coordinates = elem.geometry.coordinates;
+          coordinates.forEach(multiPolygon => {
+            multiPolygon.forEach(polygon => {
+              if(polygon.length <200){
+                return
+              }
+              const lineMaterial = new THREE.LineBasicMaterial({color: 0X00FF00}); //0x3BFA9E
+              const positions = [];
+              const linGeometry = new THREE.BufferGeometry()
+              for (let i = 0; i < polygon.length; i++) {
+                var pos = lglt2xyz(polygon[i][0], polygon[i][1])
+                positions.push(pos.x, pos.y, pos.z)
+              }
+              linGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+              const line = new THREE.Line(linGeometry, lineMaterial);
+              province.add(line);
+            })
+          })
+          map.add(province)
+        })
+        group.add(map)
+
+        // const singleUniforms = {
+        //   u_time: uniforms2.u_time,
+        //   number: { type: 'f', value: number },
+        //   speed: { type: 'f', value: speed },
+        //   length: { type: 'f', value: length },
+        //   size: { type: 'f', value: size },
+        //   color: { type: 'v3', value: color }
+        // };
+
       },
 
       //获取材质
