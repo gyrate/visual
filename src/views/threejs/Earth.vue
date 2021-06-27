@@ -12,7 +12,6 @@
   import DAT from 'three/examples/jsm/libs/dat.gui.module.js'
   import Stats from 'three/examples/jsm/libs/stats.module.js'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-  import {lglt2xyz} from '@/utils/index'
 
 
   let renderer, camera, scene, light, controls;
@@ -46,7 +45,9 @@
       this.initBg()
       this.initEarth()
       this.initHalo()
+      this.initMap()
       this.initMarkers()
+
     },
     methods: {
       initRender(){
@@ -248,7 +249,7 @@
 
         data.forEach(item => {
           const [lng, lat] = item.center.split(',')
-          const pos = lglt2xyz(lng, lat, this.radius )
+          const pos = this.lglt2xyz(lng, lat, this.radius )
           let mark = this.createPointMesh(pos, texture)
           let bar = this.createLightbar(pos, texture1)
           group.add(mark, bar)
@@ -308,6 +309,42 @@
         return groupMesh
       },
 
+      // 绘制中国地图边界
+      async initMap() {
+
+        const chinaJson = await this.fetchData(`/mock/China.json`)
+        const map = new THREE.Group()
+        const lglt2xyz = this.lglt2xyz
+
+        // 遍历省份构建模型
+        chinaJson.features.forEach((elem,index) => {
+
+          // 新建一个省份容器：用来存放省份对应的模型和轮廓线
+          const province = new THREE.Object3D();
+          const coordinates = elem.geometry.coordinates;
+          coordinates.forEach(multiPolygon => {
+            multiPolygon.forEach(polygon => {
+              const lineMaterial = new THREE.LineBasicMaterial({color: 0XF19553}); //0x3BFA9E
+              const positions = [];
+              const linGeometry = new THREE.BufferGeometry()
+              for (let i = 0; i < polygon.length; i++) {
+                var pos = lglt2xyz(polygon[i][0], polygon[i][1])
+                const {x,y,z} = pos
+                if (x == NaN || y == NaN || z == NaN) {
+                  debugger
+                }
+                positions.push(pos.x, pos.y, pos.z)
+              }
+              linGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+              const line = new THREE.Line(linGeometry, lineMaterial);
+              province.add(line);
+            })
+          })
+          map.add(province)
+        })
+        group.add(map)
+      },
+
       //获取材质
       globeTextureLoader(url) {
         return new Promise(resolve => {
@@ -317,12 +354,20 @@
         })
       },
 
+      //获取json数据
       fetchData(url) {
         return new Promise(resolve => {
           axios.get(url).then(res => {
             resolve(res.data)
           })
         })
+      },
+
+      //地理坐标转为空间坐标
+      lglt2xyz(lng, lat) {
+        const theta = (0 + lng) * (Math.PI / 180) + 89.536
+        const phi = (90 - lat) * (Math.PI / 180)
+        return (new THREE.Vector3()).setFromSpherical(new THREE.Spherical(this.radius, phi, theta))
       }
 
     }
