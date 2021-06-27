@@ -7,10 +7,14 @@
 </template>
 
 <script>
+  import axios from 'axios'
   import * as THREE from 'three'
   import DAT from 'three/examples/jsm/libs/dat.gui.module.js'
   import Stats from 'three/examples/jsm/libs/stats.module.js'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+  import {lglt2xyz} from '@/utils/index'
+
+
   let renderer, camera, scene, light, controls;
   let group, groupHalo
 
@@ -34,10 +38,15 @@
       this.animate()
       window.addEventListener('resize', this.onWindowResize, false)
 
+      group = new THREE.Group();
+      scene.add( group);
+      groupHalo = new THREE.Group()
+      scene.add( groupHalo);
 
       this.initBg()
       this.initEarth()
       this.initHalo()
+      this.initMarkers()
     },
     methods: {
       initRender(){
@@ -166,16 +175,16 @@
       },
 
       async initEarth(){
-        group = new THREE.Group();
+
         group.rotation.set( 0.5, 2.9, 0.1 );
-        scene.add( group);
 
         //球体
         const texture = await this.globeTextureLoader('/image/earth/earth.jpg')
         var globeGgeometry = new THREE.SphereGeometry( this.radius, 100, 100 );
-        var globeMaterial = new THREE.MeshStandardMaterial({map: texture})
+        var globeMaterial = new THREE.MeshStandardMaterial({
+          map: texture
+        })
         var globeMesh = new THREE.Mesh(globeGgeometry, globeMaterial)
-
         group.add( globeMesh );
 
         //大气层
@@ -187,13 +196,12 @@
           depthWrite: false
         })
         var aperture = new THREE.Sprite(spriteMaterial)
-        aperture.scale.set(this.radius*3 , this.radius*3 , 1)
+        aperture.scale.set(this.radius * 3, this.radius * 3, 1)
         group.add(aperture)
       },
 
+      //星环
       async initHalo(){
-        groupHalo = new THREE.Group()
-        scene.add( groupHalo);
 
         //星环
         const texture =  await this.globeTextureLoader('/image/earth/halo.png')
@@ -232,11 +240,88 @@
         groupHalo.add(statellite)
       },
 
+      //球面上的点标注
+      async initMarkers(){
+        const texture = await this.globeTextureLoader(`/image/earth/biaozhu.png`)
+        const texture1 = await this.globeTextureLoader(`/image/earth/biaozhu1.png`)
+        const data = await  this.fetchData(`/mock/provinces.json`)
+
+        data.forEach(item => {
+          const [lng, lat] = item.center.split(',')
+          const pos = lglt2xyz(lng, lat, this.radius )
+          let mark = this.createPointMesh(pos, texture)
+          let bar = this.createLightbar(pos, texture1)
+          group.add(mark, bar)
+        })
+      },
+
+      //标注
+      createPointMesh( pos, texture ) {
+        var planGeometry = new THREE.PlaneGeometry()
+        var material = new THREE.MeshBasicMaterial( {
+          map: texture,
+          transparent: true, //使用背景透明的png贴图，注意开启透明计算
+          // side: THREE.DoubleSide, //双面可见
+          depthWrite: false, //禁止写入深度缓冲区数据
+        } );
+        var mesh = new THREE.Mesh( planGeometry, material );
+        var size = this.radius * 0.02;//矩形平面Mesh的尺寸
+        mesh.scale.set( size, size, size );//设置mesh大小
+        //设置mesh位置
+        mesh.position.set( pos.x, pos.y, pos.z );
+        // mesh在球面上的法线方向(球心和球面坐标构成的方向向量)
+        var coordVec3 = new THREE.Vector3( pos.x, pos.y, pos.z ).normalize();
+        // mesh默认在XOY平面上，法线方向沿着z轴new THREE.Vector3(0, 0, 1)
+        var meshNormal = new THREE.Vector3( 0, 0, 1 );
+        // 四元数属性.quaternion表示mesh的角度状态
+        //.setFromUnitVectors();计算两个向量之间构成的四元数值
+        mesh.quaternion.setFromUnitVectors( meshNormal, coordVec3 );
+        return mesh;
+      },
+
+      createLightbar(pos, texture){
+
+        var plane = new THREE.PlaneGeometry(50,100)
+        var material = new THREE.MeshPhongMaterial({
+          //设置矩形网格模型的纹理贴图(光柱特效)
+          map: texture,
+          // 双面显示
+          side: THREE.DoubleSide,
+          // 开启透明效果，否则颜色贴图map的透明不起作用
+          transparent: true,
+          color: '#0dfdf8'
+        });
+        var mesh = new THREE.Mesh(plane, material);
+        var size = this.radius * 0.001;//矩形平面Mesh的尺寸
+        mesh.scale.set( size, size, size );//设置mesh大小
+        mesh.position.set( pos.x, pos.y, pos.z );
+
+        var coordVec3 = new THREE.Vector3( pos.x, pos.y, pos.z ).normalize();
+        var meshNormal = new THREE.Vector3( 0, 1, 0 );
+        mesh.quaternion.setFromUnitVectors( meshNormal, coordVec3 );
+
+        //创建一个复制 并旋转90度
+        var mesh2 = mesh.clone().rotateY(Math.PI / 2)
+        var groupMesh = new THREE.Group()
+        groupMesh.add(mesh, mesh2)
+
+        return groupMesh
+      },
+
+      //获取材质
       globeTextureLoader(url) {
         return new Promise(resolve => {
           // var texture = THREE.ImageUtils.loadTexture(url)
           var texture = new THREE.TextureLoader().load(url)
           resolve(texture)
+        })
+      },
+
+      fetchData(url) {
+        return new Promise(resolve => {
+          axios.get(url).then(res => {
+            resolve(res.data)
+          })
         })
       }
 
