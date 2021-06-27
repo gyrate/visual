@@ -12,7 +12,7 @@
   import Stats from 'three/examples/jsm/libs/stats.module.js'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
   let renderer, camera, scene, light, controls;
-
+  let group
 
   export default {
     name: 'Earth',
@@ -20,7 +20,8 @@
     data() {
       return {
         width: 0,
-        height: 0
+        height: 0,
+        radius: 100
       }
     },
     mounted() {
@@ -35,6 +36,7 @@
 
 
       this.initBg()
+      this.initEarth()
     },
     methods: {
       initRender(){
@@ -162,6 +164,40 @@
 
       },
 
+      async initEarth(){
+        group = new THREE.Group();
+
+        //球体
+        const texture = await this.globeTextureLoader('/image/earth/earth.jpg')
+        var globeGgeometry = new THREE.SphereGeometry( this.radius, 100, 100 );
+        var globeMaterial = new THREE.MeshStandardMaterial({map: texture})
+        var globeMesh = new THREE.Mesh(globeGgeometry, globeMaterial)
+
+
+        group.rotation.set( 0.5, 2.9, 0.1 );
+        group.add( globeMesh );
+        scene.add( group);
+
+        //大气层
+        const texture2 =  await this.globeTextureLoader('/image/earth/earth_aperture.png')
+        var spriteMaterial = new THREE.SpriteMaterial({
+          map: texture2,
+          transparent: true,
+          opacity:1,
+          depthWrite: false
+        })
+        var aperture = new THREE.Sprite(spriteMaterial)
+        aperture.scale.set(this.radius*3 , this.radius*3 , 1)
+        group.add(aperture)
+      },
+
+      globeTextureLoader(url) {
+        return new Promise(resolve => {
+          // var texture = THREE.ImageUtils.loadTexture(url)
+          var texture = new THREE.TextureLoader().load(url)
+          resolve(texture)
+        })
+      }
 
     }
   }
