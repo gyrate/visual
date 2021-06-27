@@ -12,7 +12,7 @@
   import Stats from 'three/examples/jsm/libs/stats.module.js'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
   let renderer, camera, scene, light, controls;
-  let group
+  let group, groupHalo
 
   export default {
     name: 'Earth',
@@ -37,6 +37,7 @@
 
       this.initBg()
       this.initEarth()
+      this.initHalo()
     },
     methods: {
       initRender(){
@@ -166,6 +167,8 @@
 
       async initEarth(){
         group = new THREE.Group();
+        group.rotation.set( 0.5, 2.9, 0.1 );
+        scene.add( group);
 
         //球体
         const texture = await this.globeTextureLoader('/image/earth/earth.jpg')
@@ -173,10 +176,7 @@
         var globeMaterial = new THREE.MeshStandardMaterial({map: texture})
         var globeMesh = new THREE.Mesh(globeGgeometry, globeMaterial)
 
-
-        group.rotation.set( 0.5, 2.9, 0.1 );
         group.add( globeMesh );
-        scene.add( group);
 
         //大气层
         const texture2 =  await this.globeTextureLoader('/image/earth/earth_aperture.png')
@@ -189,6 +189,47 @@
         var aperture = new THREE.Sprite(spriteMaterial)
         aperture.scale.set(this.radius*3 , this.radius*3 , 1)
         group.add(aperture)
+      },
+
+      async initHalo(){
+        groupHalo = new THREE.Group()
+        scene.add( groupHalo);
+
+        //星环
+        const texture =  await this.globeTextureLoader('/image/earth/halo.png')
+        var geometry = new THREE.PlaneGeometry(this.radius * 3, this.radius * 3)
+        var material = new THREE.MeshLambertMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        })
+        var mesh = new THREE.Mesh( geometry, material )
+        groupHalo.add(mesh)
+
+        this.initSatellite()
+      },
+
+      //卫星
+      async initSatellite(){
+
+        const dis = this.radius * 1.5
+
+        const texture =  await this.globeTextureLoader('/image/earth/smallEarth.png')
+        var p1 = new THREE.Vector3( -dis, 0, 0 );
+        var p2 = new THREE.Vector3( dis, 0, 0 );
+        const points = [ p1,p2];
+        const geometry = new THREE.BufferGeometry().setFromPoints( points );
+        var material = new THREE.PointsMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide,
+          size: 20,
+          depthWrite: false
+        });
+        var statellite = new THREE.Points(geometry, material)
+        groupHalo.rotation.set( 2, 0.5, 0 )
+        groupHalo.add(statellite)
       },
 
       globeTextureLoader(url) {
