@@ -15,6 +15,9 @@ var routes = [{
 },{
     path:'/webgl-round',
     component:()=>import('@/views/WebglRound.vue')
+}, {
+  path: '/earth',
+  component: () => import('@/views/threejs/Earth.vue')
 }]
 
 const router = createRouter({
