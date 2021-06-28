@@ -12,6 +12,7 @@
   import DAT from 'three/examples/jsm/libs/dat.gui.module.js'
   import Stats from 'three/examples/jsm/libs/stats.module.js'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+  import StreamLineShader from '@/utils/shader/StreamLineShader.js'
 
 
   let renderer, camera, scene, light, controls;
@@ -24,7 +25,10 @@
       return {
         width: 0,
         height: 0,
-        radius: 100
+        radius: 100,
+        uniforms2: {
+          u_time: {value: 0.0},
+        }
       }
     },
     mounted() {
@@ -45,7 +49,7 @@
       this.initBg()
       this.initEarth()
       this.initHalo()
-      // this.initMap()
+      this.initMap()
       this.outLineMap()
       this.initMarkers()
 
@@ -72,7 +76,7 @@
       //初始化相机
       initCamera() {
         camera = new THREE.PerspectiveCamera(45, this.width / this.height, 1, 10000);
-        camera.position.set(5, -20, 200);
+        camera.position.set(5, -20, 350);
         camera.lookAt(0, 3, 0);
         window.camera = camera;
       },
@@ -93,7 +97,7 @@
         controls.enableDamping = true;
         controls.enableZoom = true;
         controls.autoRotate = false;
-        controls.autoRotateSpeed = 2;
+        controls.autoRotateSpeed = 0.2;
         controls.enablePan = true;
       },
 
@@ -111,6 +115,10 @@
           if (controls) {
             controls.update();
           }
+
+
+          //流光线的时间
+          t.uniforms2.u_time.value += 0.003;
           t.renders();
           t.animate();
         });
@@ -131,7 +139,7 @@
         hemiLight.position.set(0, 1, 0);
         scene.add(hemiLight);
 
-        var directionalLight = new THREE.DirectionalLight(0xffffff);
+        var directionalLight2 = new THREE.DirectionalLight(0xffffff);
         directionalLight.position.set(1, 500, -20);
         directionalLight.castShadow = true;
         directionalLight.shadow.camera.top = 18;
@@ -330,10 +338,6 @@
               const linGeometry = new THREE.BufferGeometry()
               for (let i = 0; i < polygon.length; i++) {
                 var pos = lglt2xyz(polygon[i][0], polygon[i][1])
-                const {x,y,z} = pos
-                if (x == NaN || y == NaN || z == NaN) {
-                  debugger
-                }
                 positions.push(pos.x, pos.y, pos.z)
               }
               linGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -363,15 +367,16 @@
               if(polygon.length <200){
                 return
               }
-              const lineMaterial = new THREE.LineBasicMaterial({color: 0X00FF00}); //0x3BFA9E
+
               const positions = [];
-              const linGeometry = new THREE.BufferGeometry()
               for (let i = 0; i < polygon.length; i++) {
                 var pos = lglt2xyz(polygon[i][0], polygon[i][1])
-                positions.push(pos.x, pos.y, pos.z)
+                positions.push(pos)
               }
-              linGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-              const line = new THREE.Line(linGeometry, lineMaterial);
+              //使用点创建平滑曲线
+              let curve = new THREE.CatmullRomCurve3(positions, false)
+              //创建流光线
+              const line = this.generatetStreamLine(curve, 5000)
               province.add(line);
             })
           })
@@ -379,15 +384,55 @@
         })
         group.add(map)
 
-        // const singleUniforms = {
-        //   u_time: uniforms2.u_time,
-        //   number: { type: 'f', value: number },
-        //   speed: { type: 'f', value: speed },
-        //   length: { type: 'f', value: length },
-        //   size: { type: 'f', value: size },
-        //   color: { type: 'v3', value: color }
-        // };
+      },
 
+      /**
+       * 使用现有路径创建流光线
+       * @param curve 路径
+       * @param pointsNumber 组成路径的点的个数
+       * @returns {THREE.Points}
+       */
+      generatetStreamLine(curve, pointsNumber=1000) {
+
+        var points = curve.getPoints(pointsNumber)
+        const geometry = new THREE.BufferGeometry().setFromPoints( points )
+        const len = points.length
+
+        var arr = new Float32Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = i/len
+        }
+        geometry.addAttribute('percent', new THREE.BufferAttribute(arr, 1))
+        var material = this.initStreamLineMaterial({
+          number: 3,
+          speed: 0.4,
+          length: 0.2,
+          size: 3,
+          color: new THREE.Color(0.6, 0.78, 0.62)
+        })
+        // var material2 = new THREE.PointsMaterial({
+        //   color: '#f6ff1b',
+        //   size: 0.05
+        // })
+        return new THREE.Points(geometry, material)
+      },
+
+      //流光线材质
+      initStreamLineMaterial({number = 1, speed = 1, length = 0.5, size = 2, color = '#00ffff'}) {
+
+        return new THREE.ShaderMaterial({
+          uniforms: {
+            u_time: this.uniforms2.u_time,
+            number: {type: "f", value: number},
+            speed: {type: "f", value: speed},
+            length: {type: "f", value: length},
+            size: {type: "f", value: size},
+            color: {type: "f", value: color}
+          },
+          vertexShader: StreamLineShader.vertexShader,
+          fragmentShader: StreamLineShader.fragmentShader,
+          transparent: true
+        })
       },
 
       //获取材质
