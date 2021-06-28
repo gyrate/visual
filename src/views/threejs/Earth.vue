@@ -25,7 +25,7 @@
       return {
         width: 0,
         height: 0,
-        radius: 100,
+        radius: 5,
         uniforms2: {
           u_time: {value: 0.0},
         }
@@ -76,8 +76,8 @@
       //初始化相机
       initCamera() {
         camera = new THREE.PerspectiveCamera(45, this.width / this.height, 1, 10000);
-        camera.position.set(5, -20, 350);
-        camera.lookAt(0, 3, 0);
+        camera.position.set(0.5, -2, 20);
+        camera.lookAt(0, 0, 0);
         window.camera = camera;
       },
 
@@ -102,9 +102,13 @@
       },
 
       onWindowResize() {
+        this.width = window.innerWidth
+        this.height = window.innerHeight
+
         camera.aspect = this.width / this.height
         camera.updateProjectionMatrix()
         renderer.setSize(this.width, this.height)
+
         this.renders()
       },
 
@@ -116,6 +120,8 @@
             controls.update();
           }
 
+          group.rotation.y += 0.005
+          groupHalo.rotation.z += 0.005
 
           //流光线的时间
           t.uniforms2.u_time.value += 0.003;
@@ -192,7 +198,8 @@
         const texture = await this.globeTextureLoader('/image/earth/earth.jpg')
         var globeGgeometry = new THREE.SphereGeometry( this.radius, 100, 100 );
         var globeMaterial = new THREE.MeshStandardMaterial({
-          map: texture
+          map: texture,
+          side:THREE.DoubleSide
         })
         var globeMesh = new THREE.Mesh(globeGgeometry, globeMaterial)
         group.add( globeMesh );
@@ -242,7 +249,7 @@
           map: texture,
           transparent: true,
           side: THREE.DoubleSide,
-          size: 20,
+          size: 2,
           depthWrite: false
         });
         var statellite = new THREE.Points(geometry, material)
