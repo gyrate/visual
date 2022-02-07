@@ -20,6 +20,9 @@ var routes = [{
 }, {
   path: '/earth',
   component: () => import('@/views/threejs/Earth.vue')
+}, {
+  path: '/lego',
+  component: () => import('@/views/threejs/Lego.vue')
 }]
 
 const router = new VueRouter({
