@@ -18,6 +18,8 @@
   let renderer, camera, scene, light, controls;
   let group, groupHalo
 
+  const waveMarks =[]
+
   export default {
     name: 'Earth',
     components: {},
@@ -120,8 +122,25 @@
             controls.update();
           }
 
-          group.rotation.y += 0.005
-          groupHalo.rotation.z += 0.005
+          if (waveMarks.length > 0) {
+            for (let i = 0; i < waveMarks.length; i++) {
+
+              const mesh = waveMarks[i]
+              mesh._s += 0.005
+              mesh.scale.set(mesh.size * mesh._s, mesh.size * mesh._s, mesh.size * mesh._s)
+
+              if (mesh._s < 1.5) {
+                mesh.material.opacity = 2 * mesh._s - 2
+              } else if (mesh._s >= 1.5 && mesh._s < 2) {
+                mesh.material.opacity = 4 - 2 * mesh._s
+              } else {
+                mesh._s = 1
+              }
+            }
+          }
+
+          // group.rotation.y += 0.005
+          // groupHalo.rotation.z += 0.005
 
           //流光线的时间
           t.uniforms2.u_time.value += 0.003;
@@ -261,6 +280,7 @@
       async initMarkers(){
         const texture = await this.globeTextureLoader(`/image/earth/biaozhu.png`)
         const texture1 = await this.globeTextureLoader(`/image/earth/biaozhu1.png`)
+        const texture2 = await this.globeTextureLoader(`/image/earth/wave.png`)
         const data = await  this.fetchData(`/mock/provinces.json`)
 
         data.forEach(item => {
@@ -268,7 +288,8 @@
           const pos = this.lglt2xyz(lng, lat, this.radius )
           let mark = this.createPointMesh(pos, texture)
           let bar = this.createLightbar(pos, texture1)
-          group.add(mark, bar)
+          let waveMark = this.createWaveMarks(pos, texture2)
+          group.add(mark, bar, waveMark)
         })
       },
 
@@ -296,9 +317,32 @@
         return mesh;
       },
 
+      //球面上流动的点标注
+      createWaveMarks(pos, texture){
+        var planGeometry = new THREE.PlaneGeometry()
+        var material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true, //使用背景透明的png贴图，注意开启透明计算
+          // side: THREE.DoubleSide, //双面可见
+          depthWrite: false, //禁止写入深度缓冲区数据
+        });
+        var mesh = new THREE.Mesh(planGeometry,material)
+        var size = this.radius * 0.03
+        mesh._s = Math.random() + 1
+        mesh.size = size
+        mesh.scale.set(size,size,size )
+        mesh.position.set(pos.x, pos.y, pos.z)
+        var coordVec3 = new THREE.Vector3(pos.x,pos.y,pos.z).normalize();
+        var meshNormal = new THREE.Vector3(0,0,1)
+        mesh.quaternion.setFromUnitVectors(meshNormal, coordVec3)
+        waveMarks.push(mesh)
+        return mesh
+
+      },
+
       createLightbar(pos, texture){
 
-        var plane = new THREE.PlaneGeometry(50,100)
+        var plane = new THREE.PlaneGeometry(24,100)
         var material = new THREE.MeshPhongMaterial({
           //设置矩形网格模型的纹理贴图(光柱特效)
           map: texture,
