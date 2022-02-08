@@ -54,7 +54,7 @@
       async initEarth(){
 
         //球体
-        const texture = await this.globeTextureLoader('/image/earth/earth.jpg')
+        const texture = await this.globeTextureLoader(`${process.env.BASE_URL}/image/earth/earth.jpg`)
         var globeGgeometry = new THREE.SphereGeometry( this.radius, 1000, 1000 );
         var globeMaterial = new THREE.MeshStandardMaterial({
           map: texture,

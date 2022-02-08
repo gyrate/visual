@@ -214,7 +214,7 @@
         group.rotation.set( 0.5, 2.9, 0.1 );
 
         //球体
-        const texture = await this.globeTextureLoader('/image/earth/earth.jpg')
+        const texture = await this.globeTextureLoader('${process.env.BASE_URL}/image/earth/earth.jpg')
         var globeGgeometry = new THREE.SphereGeometry( this.radius, 100, 100 );
         var globeMaterial = new THREE.MeshStandardMaterial({
           map: texture,
@@ -224,7 +224,7 @@
         group.add( globeMesh );
 
         //大气层
-        const texture2 =  await this.globeTextureLoader('/image/earth/earth_aperture.png')
+        const texture2 =  await this.globeTextureLoader('${process.env.BASE_URL}/image/earth/earth_aperture.png')
         var spriteMaterial = new THREE.SpriteMaterial({
           map: texture2,
           transparent: true,
@@ -240,7 +240,7 @@
       async initHalo(){
 
         //星环
-        const texture =  await this.globeTextureLoader('/image/earth/halo.png')
+        const texture =  await this.globeTextureLoader('${process.env.BASE_URL}/image/earth/halo.png')
         var geometry = new THREE.PlaneGeometry(this.radius * 3, this.radius * 3)
         var material = new THREE.MeshLambertMaterial({
           map: texture,
@@ -259,7 +259,7 @@
 
         const dis = this.radius * 1.5
 
-        const texture =  await this.globeTextureLoader('/image/earth/smallEarth.png')
+        const texture =  await this.globeTextureLoader('${process.env.BASE_URL}/image/earth/smallEarth.png')
         var p1 = new THREE.Vector3( -dis, 0, 0 );
         var p2 = new THREE.Vector3( dis, 0, 0 );
         const points = [ p1,p2];
@@ -278,9 +278,9 @@
 
       //球面上的点标注
       async initMarkers(){
-        const texture = await this.globeTextureLoader(`/image/earth/biaozhu.png`)
-        const texture1 = await this.globeTextureLoader(`/image/earth/biaozhu1.png`)
-        const texture2 = await this.globeTextureLoader(`/image/earth/wave.png`)
+        const texture = await this.globeTextureLoader(`${process.env.BASE_URL}/image/earth/biaozhu.png`)
+        const texture1 = await this.globeTextureLoader(`${process.env.BASE_URL}/image/earth/biaozhu1.png`)
+        const texture2 = await this.globeTextureLoader(`${process.env.BASE_URL}/image/earth/wave.png`)
         const data = await  this.fetchData(`/mock/provinces.json`)
 
         data.forEach(item => {
