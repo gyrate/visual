@@ -8,6 +8,7 @@ module.exports = {
     // 基本路径
     publicPath: process.env.NODE_ENV === 'production' ? '/' : '',
     lintOnSave: false,
+    outputDir: 'docs',
     // 生产环境 sourceMap
     productionSourceMap: false,
     devServer: {
