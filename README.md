@@ -1,7 +1,11 @@
 # visual
 可视化方面的Demo
 
-## Project setup
+## 访问地址
+
+https://gyrate.github.io/visual/
+
+## 常用指令
 ```
 npm install
 ```
@@ -15,11 +19,3 @@ npm run serve
 ```
 npm run build
 ```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
