@@ -6,10 +6,15 @@ function resolve(dir) {
 
 module.exports = {
     // 基本路径
-    publicPath: process.env.NODE_ENV === 'production' ? '/' : '',
+    publicPath: process.env.NODE_ENV === 'production' ? '/visual' : '',
+    // 输出目录
+    outputDir: 'docs',
+
     lintOnSave: false,
+
     // 生产环境 sourceMap
     productionSourceMap: false,
+
     devServer: {
         proxy: {
             [process.env.VUE_APP_BASE_API]: {

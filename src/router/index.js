@@ -23,6 +23,9 @@ var routes = [{
 }, {
   path: '/radar',
   component: () => import('@/views/Radar.vue')
+}, {
+  path: '/lego',
+  component: () => import('@/views/threejs/Lego.vue')
 }]
 
 const router = new VueRouter({
