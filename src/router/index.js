@@ -21,6 +21,9 @@ var routes = [{
   path:'/webgl-repeat',
   component:()=>import('@/views/WebglRepeat.vue')
 }, {
+  path:'/image-filter',
+  component:()=>import('@/views/ImageFilter.vue')
+}, {
   path: '/earth',
   component: () => import('@/views/threejs/Earth.vue')
 }, {
