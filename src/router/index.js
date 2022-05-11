@@ -17,6 +17,9 @@ var routes = [{
 },{
     path:'/webgl-round',
     component:()=>import('@/views/WebglRound.vue')
+},{
+  path:'/webgl-repeat',
+  component:()=>import('@/views/WebglRepeat.vue')
 }, {
   path: '/earth',
   component: () => import('@/views/threejs/Earth.vue')
