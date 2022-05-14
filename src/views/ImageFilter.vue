@@ -1,12 +1,32 @@
 <template>
-  <div>
+  <div class="image-filter">
+
     <section>
-      <h1>灰色滤镜</h1>
+      <h1 class="title">滤镜</h1>
       <canvas width="500" height="500" ref="canvas1"></canvas>
-    </section>
-    <section>
-      <h2></h2>
-      <canvas width="500" height="500" ref="canvas2"></canvas>
+      <div class="tool">
+
+        <div class="tool-section" v-for="(item,key) in filterMap" :key="key">
+          <label>{{ item.text }}</label>
+          <input type="number" :min="item.min" :max="item.max" v-model="item.value"/>
+          <span>( {{item.min}} - {{item.max}} )</span>
+          <input type="button" @click="refreshFilter(key)" value="执行">
+        </div>
+        <div  class="tool-section">
+          <input type="button" @click="initFilter" value="重置">
+        </div>
+
+        <div class="tool-section" v-for="(item,key) in gaussMap" :key="key">
+          <label>{{ item.text }}</label>
+          <input type="number" :min="item.min" :max="item.max" v-model="item.value"/>
+          <span>( {{item.min}} - {{item.max}} )</span>
+        </div>
+
+        <div  class="tool-section">
+          <input type="button" @click="setGauss" value="高斯模糊">
+        </div>
+
+      </div>
     </section>
 
   </div>
@@ -14,36 +34,91 @@
 
 <script>
 
-import {loadImage, getImageData, traverse} from "@/utils/imageFilter";
+import {loadImage, getImageData, traverse, gaussianBlur} from "@/utils/imageFilter";
+import * as ColorMatrix from '@/utils/color-matrix';
+
+const imgUrl = './image/golf.png'
 
 export default {
   name: "ImageFilter",
   components: {},
+  data(){
+    return {
+      filterMap:  {
+        grayscale: {value: 0.5, min: 0, max: 1, text: '灰度'},
+        saturate:  {value: 0.5, min: 0, max: 1, text: '饱和度'},
+        brightness: {value:0.5, min: 0, max: 10, text: '亮度'},
+        contrast:  {value: 0.5, min: 0, max: 10, text: '对比度'},
+        invert:  {value: 0.5, min: 0, max: 1, text: '反色'},
+        opacity: {value: 0.5, min:0,max: 1,text:'透明度'},
+        sepia: {value: 0.5, min:0,max: 1,text:'sepia'},
+        hueRotate: {value: 50, min:0, max: 360,text:'色相'},
+      },
+      gaussMap:{
+        radius: {value: 4, min: 1,max: 100, text:'取值半径'},
+        // sigma: {value: 1, min: 1,max: 100, text:'标准方差'},
+      }
+    }
+  },
   mounted() {
     this.init();
   },
+
   methods: {
 
     init() {
-      this.filterGray()
+      this.initFilter()
     },
 
-    async filterGray() {
+    setGauss(){
+
+      const canvas = this.$refs['canvas1']
+      const context = canvas.getContext('2d');
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+      const {radius, sigma} = this.gaussMap
+
+      gaussianBlur(imageData.data,  canvas.width, canvas.height,radius.value)
+      canvas.width = imageData.width;
+      canvas.height = imageData.height;
+      context.putImageData(imageData, 0, 0);
+
+    },
+
+    refreshFilter(key){
+
+      const canvas = this.$refs['canvas1']
+      const context = canvas.getContext('2d');
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+
+      const {transformColor} = ColorMatrix
+      const matrixArr = ColorMatrix[key](this.filterMap[key].value)
+
+      // 遍历 imageData 数据对象
+      traverse(imageData, ({r, g, b, a}) => {
+        return transformColor(
+            [r, g, b, a],
+            matrixArr
+        )
+      })
+
+      canvas.width = imageData.width;
+      canvas.height = imageData.height;
+      context.putImageData(imageData, 0, 0);
+
+    },
+
+    async initFilter() {
       const canvas = this.$refs['canvas1']
       const context = canvas.getContext('2d');
       // 异步加载图片
-      const img = await loadImage('https://p2.ssl.qhimg.com/d/inn/4b7e384c55dc/girl1.jpg');
+      const img = await loadImage(imgUrl);
       // 获取图片的imageData 数据对象
       const imageData = getImageData(img);
-      // 遍历 imageData 数据对象
-      traverse(imageData, ({r, g, b, a}) => {
-        const v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        return [v, v, v, a];
-      });
       // 更新canvas内容
       canvas.width = imageData.width;
       canvas.height = imageData.height;
       context.putImageData(imageData, 0, 0);
+
     }
 
 
@@ -51,5 +126,29 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss">
+.image-filter {
+
+  input[type=number] {
+    margin: 0 0.5em;
+  }
+  input[type=button] {
+    margin: 0 1em;
+  }
+  .title{
+    padding: .5em;
+    font-size: 16px;
+  }
+  .tool{
+    padding: .5em;
+
+    &-section{
+      padding: 0.5em 0;
+    }
+  }
+
+  canvas {
+
+  }
+}
 </style>
