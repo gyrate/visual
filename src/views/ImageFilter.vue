@@ -1,41 +1,48 @@
 <template>
   <div class="image-filter">
 
-    <section>
+    <div>
       <h1 class="title">滤镜</h1>
       <canvas width="500" height="500" ref="canvas1"></canvas>
-      <div class="tool">
-
-        <div class="tool-section" v-for="(item,key) in filterMap" :key="key">
+      
+      <section>
+        <div class="field" v-for="(item,key) in filterMap" :key="key">
           <label>{{ item.text }}</label>
           <input type="number" :min="item.min" :max="item.max" v-model="item.value"/>
           <span>( {{item.min}} - {{item.max}} )</span>
           <input type="button" @click="refreshFilter(key)" value="执行">
         </div>
-        <div  class="tool-section">
+        <div  class="field">
           <input type="button" @click="initFilter" value="重置">
         </div>
-
-        <div class="tool-section" v-for="(item,key) in gaussMap" :key="`gaussMap_${key}`">
+      </section>
+      
+      <section>
+        <div class="field" v-for="(item,key) in gaussMap" :key="`gaussMap_${key}`">
           <label>{{ item.text }}</label>
           <input type="number" :min="item.min" :max="item.max" v-model="item.value"/>
           <span>( {{item.min}} - {{item.max}} )</span>
         </div>
-        <div  class="tool-section">
+        <div  class="field">
           <input type="button" @click="setGauss" value="高斯模糊">
         </div>
-
-        <div class="tool-section" v-for="(item,key) in magniferMap" :key="`magnifer_${key}`">
+      </section>
+      
+      <section>
+        <div class="field" v-for="(item,key) in magniferMap" :key="`magnifer_${key}`">
           <label>{{ item.text }}</label>
           <input type="number" :min="item.min" :max="item.max" v-model="item.value"/>
           <span>( {{item.min}} - {{item.max}} )</span>
         </div>
-        <div  class="tool-section">
+        <div class="field">
+          <label>鼠标跟随 <input type="checkbox" v-model="moveFollow" /></label> {{moveFollow}}
+        </div>
+        <div  class="field">
           <input type="button" @click="setMagnifer" value="局部放大">
         </div>
-
-      </div>
-    </section>
+      </section>
+      
+    </div>
 
   </div>
 </template>
@@ -67,10 +74,11 @@ export default {
         // sigma: {value: 1, min: 1,max: 100, text:'标准方差'},
       },
       magniferMap:{
-        x:{value: 500, min:0, max: 1000, text: '区域中心x'},
-        y:{value: 180, min:0, max: 500, text: '区域中心y'},
+        x:{value: 420, min:0, max: 1000, text: '区域中心x'},
+        y:{value: 210, min:0, max: 500, text: '区域中心y'},
         radius: {value: 60, min: 10, max: 300, text: '放大半径'}
       },
+      moveFollow: false,
       orgImageDataArr: []
     }
   },
@@ -84,8 +92,8 @@ export default {
       this.initFilter()
 
       this.$refs['canvas1'].addEventListener('mousemove', (e)=>{
-        // console.log(e.clientX + ',' + e.clientY)
-        this.setMagnifer(e)
+        console.log(e.clientX + ',' + e.clientY)
+        this.moveFollow && this.setMagnifer(e)
       })
     },
 
@@ -96,7 +104,7 @@ export default {
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
       const {radius, sigma} = this.gaussMap
 
-      magnifer(imageData.data,  canvas.width, canvas.height, parseFloat(radius.value))
+      gaussianBlur(imageData.data,  canvas.width, canvas.height, parseFloat(radius.value))
       canvas.width = imageData.width;
       canvas.height = imageData.height;
       context.putImageData(imageData, 0, 0);
@@ -111,13 +119,15 @@ export default {
 
       const imageData = new ImageData(new Uint8ClampedArray(this.orgImageDataArr),canvas.width, canvas.height)
 
-      const {radius} = this.magniferMap
+      const {radius, x, y} = this.magniferMap
       const {clientX, clientY} = event
 
-      magnifer(imageData.data, canvas.width, canvas.height, parseFloat(radius.value), {
+      magnifer(imageData.data, canvas.width, canvas.height, 1.2, {
         magniferR: radius.value,
         centerX: clientX,
-        centerY: clientY
+        centerY: clientY,
+        // centerX: x.value,
+        // centerY: y.value
       })
       canvas.width = imageData.width;
       canvas.height = imageData.height;
@@ -171,6 +181,15 @@ export default {
 <style lang="scss">
 .image-filter {
 
+  section{
+    margin: 0.5em 0;
+    padding: .5em;
+    border: 1px solid #ccc;
+
+    .field{
+      padding: 0.5em 0;
+    }
+  }
   input[type=number] {
     margin: 0 0.5em;
   }
@@ -180,13 +199,6 @@ export default {
   .title{
     padding: .5em;
     font-size: 16px;
-  }
-  .tool{
-    padding: .5em;
-
-    &-section{
-      padding: 0.5em 0;
-    }
   }
 
   canvas {

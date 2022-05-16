@@ -122,51 +122,44 @@ export function gaussianBlur(pixels, width, height, radius = 3, sigma = radius /
   return pixels;
 }
 
-//放大镜
-export function magnifer(pixels, width, height, radius = 3, {magniferR, centerX, centerY}){
+/**
+ * 放大镜
+ * @param pixels
+ * @param width
+ * @param height
+ * @param zoom 放大倍数
+ * @param magniferR 放大区域半径
+ * @param centerX
+ * @param centerY
+ * @returns {*}
+ */
+export function magnifer(pixels, width, height, zoom = 2, {magniferR, centerX, centerY}){
 
-  const sigma = radius / 3
+  let orgPixels = [...pixels]
 
-  const {matrix, sum} = gaussianMatrix(radius, sigma);
-  // x 方向一维高斯运算
-  for(let y = 0; y < height; y++) {
-    for(let x = 0; x < width; x++) {
-      // let r = 0,
-      //   g = 0,
-      //   b = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
 
-      const len = Math.sqrt((x-centerX)**2 + (y-centerY)**2)
-      if (len > magniferR) {
-        continue
+      const len = Math.hypot((x - centerX), (y - centerY))
+      if (len < magniferR) {
+        let n_x = parseInt((x - centerX) / zoom + centerX)
+        // let n_x = x
+        let n_y = parseInt((y - centerY) / zoom + centerY)
+        // let n_y = y
+        let n_i = (n_y * width + n_x) * 4;
+        let r = orgPixels[n_i]
+        let g = orgPixels[n_i + 1]
+        let b = orgPixels[n_i + 2]
+
+        const i = (y * width + x) * 4
+        pixels[i] = r;
+        pixels[i + 1] = g;
+        pixels[i + 2] = b;
       }
 
-      //todo:如何放大
-      const i = (y * width + x) * 4;
-      pixels[i] = 255 / sum;
-      pixels[i + 1] = 0 / sum;
-      pixels[i + 2] = 0 / sum;
     }
   }
 
-  // y 方向一维高斯运算
-  for(let x = 0; x < width; x++) {
-    for(let y = 0; y < height; y++) {
-      // let r = 0,
-      //   g = 0,
-      //   b = 0;
-
-      const len = Math.sqrt((x-centerX)**2 + (y-centerY)**2)
-      if (len > magniferR) {
-        continue
-      }
-
-      //todo:如何放大
-      const i = (y * width + x) * 4;
-      pixels[i] = 0 / sum;
-      pixels[i + 1] = 255 / sum;
-      pixels[i + 2] = 0 / sum;
-    }
-  }
   return pixels;
 
 }
