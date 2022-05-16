@@ -16,14 +16,22 @@
           <input type="button" @click="initFilter" value="重置">
         </div>
 
-        <div class="tool-section" v-for="(item,key) in gaussMap" :key="key">
+        <div class="tool-section" v-for="(item,key) in gaussMap" :key="`gaussMap_${key}`">
           <label>{{ item.text }}</label>
           <input type="number" :min="item.min" :max="item.max" v-model="item.value"/>
           <span>( {{item.min}} - {{item.max}} )</span>
         </div>
-
         <div  class="tool-section">
           <input type="button" @click="setGauss" value="高斯模糊">
+        </div>
+
+        <div class="tool-section" v-for="(item,key) in magniferMap" :key="`magnifer_${key}`">
+          <label>{{ item.text }}</label>
+          <input type="number" :min="item.min" :max="item.max" v-model="item.value"/>
+          <span>( {{item.min}} - {{item.max}} )</span>
+        </div>
+        <div  class="tool-section">
+          <input type="button" @click="setMagnifer" value="局部放大">
         </div>
 
       </div>
@@ -34,7 +42,7 @@
 
 <script>
 
-import {loadImage, getImageData, traverse, gaussianBlur} from "@/utils/imageFilter";
+import {loadImage, getImageData, traverse, gaussianBlur, magnifer} from "@/utils/imageFilter";
 import * as ColorMatrix from '@/utils/color-matrix';
 
 const imgUrl = './image/golf.png'
@@ -55,9 +63,15 @@ export default {
         hueRotate: {value: 50, min:0, max: 360,text:'色相'},
       },
       gaussMap:{
-        radius: {value: 4, min: 1,max: 100, text:'取值半径'},
+        radius: {value: 3, min: 1,max: 100, text:'取值半径'},
         // sigma: {value: 1, min: 1,max: 100, text:'标准方差'},
-      }
+      },
+      magniferMap:{
+        x:{value: 500, min:0, max: 1000, text: '区域中心x'},
+        y:{value: 180, min:0, max: 500, text: '区域中心y'},
+        radius: {value: 60, min: 10, max: 300, text: '放大半径'}
+      },
+      orgImageDataArr: []
     }
   },
   mounted() {
@@ -68,6 +82,11 @@ export default {
 
     init() {
       this.initFilter()
+
+      this.$refs['canvas1'].addEventListener('mousemove', (e)=>{
+        // console.log(e.clientX + ',' + e.clientY)
+        this.setMagnifer(e)
+      })
     },
 
     setGauss(){
@@ -77,7 +96,29 @@ export default {
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
       const {radius, sigma} = this.gaussMap
 
-      gaussianBlur(imageData.data,  canvas.width, canvas.height,radius.value)
+      magnifer(imageData.data,  canvas.width, canvas.height, parseFloat(radius.value))
+      canvas.width = imageData.width;
+      canvas.height = imageData.height;
+      context.putImageData(imageData, 0, 0);
+
+    },
+
+    setMagnifer(event){
+
+      const canvas = this.$refs['canvas1']
+      const context = canvas.getContext('2d');
+      // const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+
+      const imageData = new ImageData(new Uint8ClampedArray(this.orgImageDataArr),canvas.width, canvas.height)
+
+      const {radius} = this.magniferMap
+      const {clientX, clientY} = event
+
+      magnifer(imageData.data, canvas.width, canvas.height, parseFloat(radius.value), {
+        magniferR: radius.value,
+        centerX: clientX,
+        centerY: clientY
+      })
       canvas.width = imageData.width;
       canvas.height = imageData.height;
       context.putImageData(imageData, 0, 0);
@@ -114,6 +155,7 @@ export default {
       const img = await loadImage(imgUrl);
       // 获取图片的imageData 数据对象
       const imageData = getImageData(img);
+      this.orgImageDataArr = [...imageData.data]
       // 更新canvas内容
       canvas.width = imageData.width;
       canvas.height = imageData.height;

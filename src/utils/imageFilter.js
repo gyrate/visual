@@ -121,3 +121,52 @@ export function gaussianBlur(pixels, width, height, radius = 3, sigma = radius /
   }
   return pixels;
 }
+
+//放大镜
+export function magnifer(pixels, width, height, radius = 3, {magniferR, centerX, centerY}){
+
+  const sigma = radius / 3
+
+  const {matrix, sum} = gaussianMatrix(radius, sigma);
+  // x 方向一维高斯运算
+  for(let y = 0; y < height; y++) {
+    for(let x = 0; x < width; x++) {
+      // let r = 0,
+      //   g = 0,
+      //   b = 0;
+
+      const len = Math.sqrt((x-centerX)**2 + (y-centerY)**2)
+      if (len > magniferR) {
+        continue
+      }
+
+      //todo:如何放大
+      const i = (y * width + x) * 4;
+      pixels[i] = 255 / sum;
+      pixels[i + 1] = 0 / sum;
+      pixels[i + 2] = 0 / sum;
+    }
+  }
+
+  // y 方向一维高斯运算
+  for(let x = 0; x < width; x++) {
+    for(let y = 0; y < height; y++) {
+      // let r = 0,
+      //   g = 0,
+      //   b = 0;
+
+      const len = Math.sqrt((x-centerX)**2 + (y-centerY)**2)
+      if (len > magniferR) {
+        continue
+      }
+
+      //todo:如何放大
+      const i = (y * width + x) * 4;
+      pixels[i] = 0 / sum;
+      pixels[i + 1] = 255 / sum;
+      pixels[i + 2] = 0 / sum;
+    }
+  }
+  return pixels;
+
+}
