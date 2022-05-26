@@ -106,12 +106,22 @@ export default {
 
     render(){
       const {ctx, width, height} = this
-      var prev = ctx.globalCompositeOperation
-      ctx.globalCompositeOperation = 'destination-in'
+      //默认值为source-over
+      var prev = ctx.globalCompositeOperation;
 
-      ctx.globalAlpha = 0.97
-      ctx.fillRect(0,0, width, height)
-      ctx.globalCompositeOperation = prev
+      //只显示canvas上原图像的重叠部分
+      ctx.globalCompositeOperation = 'destination-in';
+
+      //设置主canvas的绘制透明度
+      ctx.globalAlpha = 0.95;
+
+      //这一步目的是将canvas上的图像变的透明
+      ctx.fillRect(0, 0, width, height);
+
+      //在原图像上重叠新图像
+      ctx.globalCompositeOperation = prev;
+
+      //在主canvas上画新圆
       this.draw()
 
       window.requestAnimationFrame(this.render)
@@ -120,16 +130,14 @@ export default {
     draw(){
       const {ctx, x, y, r, shadowBlur, color} = this
 
+      ctx.beginPath()
       ctx.lineWidth = 0
-      // ctx.strokeStyle = "#fc0a4b"
       ctx.shadowBlur = shadowBlur
       ctx.shadowColor = color
       ctx.fillStyle = color
-      ctx.fill()
-      ctx.beginPath()
       ctx.arc( x, y, r, 0, Math.PI * 2 )
-
       ctx.closePath()
+      ctx.fill()
 
       this.updateXY()
     },
