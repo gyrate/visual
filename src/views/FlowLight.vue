@@ -1,21 +1,24 @@
 <template>
-  <div>
+  <div class="flow-light">
     <h3>流光效果</h3>
     <canvas width="500" height="300" ref="canvas"></canvas>
 
-    <div>
+    <section>
       <label>半径</label>
       <input type="range" v-model="r" min="1" max="20">
-    </div>
-    <div>
+    </section>
+    <section>
       <label>颜色</label>
       <input type="color" v-model="color">
-    </div>
-    <div>
+    </section>
+    <section>
       <label>阴影模糊级别</label>
       <input type="range" v-model="shadowBlur" min="1" max="20">
-    </div>
-
+    </section>
+    <section>
+      <label>轨迹类型</label>
+      <input type="button" v-for="(item,index) in rayList" :value="item.label" :key="index" @click="changeRay(index)"/>
+    </section>
   </div>
 </template>
 
@@ -39,6 +42,15 @@ export default {
       r: 2,
       color: '#ffffff',
       shadowBlur: 10,
+
+      rayList: [
+        {label:'直线',id: 'line'},
+        {label:'圆形',id: 'circle'},
+        {label:'椭圆',id: 'ellipse'},
+        {label:'2阶贝塞尔',id: 'twoBezier'},
+        {label:'3阶贝塞尔',id: 'threeBezier'},
+      ],
+      currRayId: 'line',
 
       //圆形轨迹
       circleConf: {
@@ -65,7 +77,14 @@ export default {
         t: 0,
       },
 
-
+      //3阶贝塞尔
+      threeBezierConf:{
+        p1: [100,100], //起点坐标
+        p2: [400, 100],//终点坐标
+        cp1: [100,250], //拐点1坐标
+        cp2: [400,250], //拐点2坐标
+        t: 0,
+      }
 
     }
   },
@@ -112,37 +131,72 @@ export default {
 
       ctx.closePath()
 
-      //直线
-      // if (y > this.height || x > this.width) {
-      //   this.x = 0;
-      //   this.y = 0
-      // } else {
-      //   this.x += 2
-      //   this.y += 2
-      // }
+      this.updateXY()
+    },
 
-      //圆形
-      // const {centerX, centerY, radius, angle}  = this.circleConf
-      // this.x = centerX + radius * Math.cos(angle)
-      // this.y = centerY + radius * Math.sin(angle)
-      // if (angle > 2 * Math.PI) {
-      //   this.circleConf.angle = 0
-      // } else {
-      //   this.circleConf.angle += 0.02
-      // }
+    updateXY(){
 
-      //椭圆：x=a∗cos(t) , y=b∗sin(t)
-      // const {a, b, angle, centerX, centerY } = this.ellipseConf
-      // this.x = a * Math.cos(angle) + centerX
-      // this.y = b * Math.sin(angle) + centerY
-      //
-      // if (angle > 2 * Math.PI) {
-      //   this.ellipseConf.angle = 0
-      // } else {
-      //   this.ellipseConf.angle += 0.02
-      // }
+      switch(this.currRayId){
+        case 'line':
+          //直线
+          this.updateLine()
+          break;
+        case 'circle':
+          //圆形
+          this.updateCircle()
+          break;
+        case 'ellipse':
+          //椭圆：x=a∗cos(t) , y=b∗sin(t)
+          this.updateEllipse()
+          break;
+        case 'twoBezier':
+          //2阶贝塞尔曲线
+          this.updateTwoBezier()
+          break;
+        case 'threeBezier':
+          //3阶段贝塞尔曲线
+         this.updateThreeBezier()
+          break;
+        default:
+          break;
+      }
+    },
 
-      //2阶贝塞尔曲线
+    updateLine(){
+      const {x, y} = this
+      if (y > this.height || x > this.width) {
+        this.x = 0;
+        this.y = 0
+      } else {
+        this.x += 2
+        this.y += 2
+      }
+    },
+
+    updateCircle(){
+      const {centerX, centerY, radius, angle}  = this.circleConf
+      this.x = centerX + radius * Math.cos(angle)
+      this.y = centerY + radius * Math.sin(angle)
+      if (angle > 2 * Math.PI) {
+        this.circleConf.angle = 0
+      } else {
+        this.circleConf.angle += 0.02
+      }
+    },
+
+    updateEllipse(){
+      const {a, b, angle, centerX, centerY } = this.ellipseConf
+      this.x = a * Math.cos(angle) + centerX
+      this.y = b * Math.sin(angle) + centerY
+
+      if (angle > 2 * Math.PI) {
+        this.ellipseConf.angle = 0
+      } else {
+        this.ellipseConf.angle += 0.02
+      }
+    },
+
+    updateTwoBezier(){
       const {p1, p2, cp, t} = this.twoBezierConf
       const [x1, y1] = this.twoBezier(t, p1, cp, p2)
       this.x = x1
@@ -152,10 +206,25 @@ export default {
       } else {
         this.twoBezierConf.t += 0.005
       }
+    },
 
-      //3阶段贝塞尔曲线
-      // const
+    updateThreeBezier(){
+      const {t, p1, cp1, cp2, p2} = this.threeBezierConf
+      const [x1, y1] = this.threeBezier(t, p1, cp1, cp2, p2)
+      this.x = x1
+      this.y = y1
+      if (t > 1) {
+        this.threeBezierConf.t = 0
+      } else {
+        this.threeBezierConf.t += 0.005
+      }
+    },
 
+    //调整流光路径
+    changeRay(index){
+      this.x = 100
+      this.y = 150
+      this.currRayId = this.rayList[index].id
     },
 
     /**
@@ -210,7 +279,16 @@ export default {
 </script>
 
 <style lang="scss" type="text/scss">
-canvas {
-  background-color: #000;
+.flow-light{
+  canvas {
+    background-color: #000;
+  }
+  section{
+    padding: .2em;
+    input[type=button]{
+      margin: 0 .2em;
+    }
+  }
 }
+
 </style>
