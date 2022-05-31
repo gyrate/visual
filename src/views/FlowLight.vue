@@ -49,8 +49,9 @@ export default {
         {label:'椭圆',id: 'ellipse'},
         {label:'2阶贝塞尔',id: 'twoBezier'},
         {label:'3阶贝塞尔',id: 'threeBezier'},
+        {label:'折线',id: 'threeBezier'},
       ],
-      currRayId: 'line',
+      currRayId: 'polyline',
 
       //圆形轨迹
       circleConf: {
@@ -84,8 +85,19 @@ export default {
         cp1: [100,250], //拐点1坐标
         cp2: [400,250], //拐点2坐标
         t: 0,
-      }
+      },
 
+      //连续折线
+      polyline: {
+        path: [
+          {x: 100, y: 100},
+          {x: 150, y: 100},
+          {x: 200, y: 250},
+          {x: 180, y: 200},
+          {x: 450, y: 280},
+          {x: 400, y: 100},
+        ]
+      }
     }
   },
   watch:{
@@ -165,9 +177,60 @@ export default {
           //3阶段贝塞尔曲线
          this.updateThreeBezier()
           break;
+        case 'polyline':
+          if(!this.polylinePoints){
+            this.initPolyline()
+          }
+          this.updatePolyline()
+          break;
         default:
           break;
       }
+    },
+
+    initPolyline(){
+      //路径节点
+      this.polylinePoints = this.polyline.path
+      const {x, y} = this.polylinePoints[0]
+      this.x = x
+      this.y = y
+      //当前分段索引值
+      this.currLineIndex = 0
+      //当前分段长度
+      this.currLineLen = this.getCurrLineLen()
+      //移动速度
+      //todo:缓动函数
+      this.speed = 2
+    },
+    //获取当前分段的长度
+    getCurrLineLen(){
+      const currIndex = this.currLineIndex
+      const nextIndex = (this.currLineIndex + 1) % this.polylinePoints.length
+      return Math.sqrt((this.polylinePoints[nextIndex].x - this.polylinePoints[currIndex].x) ** 2 + (this.polylinePoints[nextIndex].y - this.polylinePoints[currIndex].y) ** 2)
+    },
+
+    // 折线路径移动轨迹的实现方式按分段处理
+    // 每个分段计算xy的直线移动位置，如果目标位置超出线段，则进入下一个分段处理
+    updatePolyline(){
+
+      const {x, y} = this
+      const start = this.polylinePoints[this.currLineIndex]
+      const target = this.polylinePoints[(this.currLineIndex + 1)%this.polylinePoints.length]
+
+      let newX = x + (target.x - start.x) * this.speed / this.currLineLen
+      let newY = y + (target.y - start.y) * this.speed / this.currLineLen
+
+      if (Math.abs(newX - x) > Math.abs(target.x - x) || Math.abs(newY - y) > Math.abs(target.y - y)) {
+        //x,y超过直线终点，则换到下一段
+        this.currLineIndex = (this.currLineIndex + 1) % this.polylinePoints.length
+        this.currLineLen = this.getCurrLineLen()
+        this.x = this.polylinePoints[this.currLineIndex].x
+        this.y = this.polylinePoints[this.currLineIndex].y
+      } else {
+        this.x = newX
+        this.y = newY
+      }
+
     },
 
     updateLine(){
